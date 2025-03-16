@@ -105,7 +105,7 @@ export async function streamingDeepSeekResponse(
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    let responseText = '';
+    // let responseText = '';
 
     while (true) {
       const { done, value } = await reader.read();
@@ -129,7 +129,7 @@ export async function streamingDeepSeekResponse(
             const json: DeepSeekResponseChunk = JSON.parse(data);
             const textChunk = json.choices[0]?.delta?.content || '';
             if (textChunk) {
-              responseText += textChunk;
+              // responseText += textChunk;
               onChunk(textChunk);
             }
           } catch (e) {
