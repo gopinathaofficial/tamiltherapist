@@ -1,13 +1,19 @@
 // src/components/ChatInput.tsx
-import React, { useState, FormEvent, KeyboardEvent, useRef, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Send } from 'lucide-react';
-import { useTherapy } from './TherapyContext';
+import React, {
+  useState,
+  FormEvent,
+  KeyboardEvent,
+  useRef,
+  useEffect,
+} from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Send } from "lucide-react";
+import { useTherapy } from "./TherapyContext";
 
 const ChatInput: React.FC = () => {
-  const [input, setInput] = useState('');
-  const { sendMessage, isLoading } = useTherapy();
+  const [input, setInput] = useState("");
+  const { sendMessage, isLoading, language } = useTherapy();
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus input on mount
@@ -19,13 +25,13 @@ const ChatInput: React.FC = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     if (!input.trim() || isLoading) return;
-    
+
     const message = input.trim();
-    setInput('');
+    setInput("");
     await sendMessage(message);
-    
+
     // Re-focus input after sending
     if (inputRef.current) {
       inputRef.current.focus();
@@ -33,7 +39,7 @@ const ChatInput: React.FC = () => {
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       handleSubmit(e);
     }
   };
@@ -45,13 +51,21 @@ const ChatInput: React.FC = () => {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={isLoading ? "உரையாடல் நடைபெறுகிறது..." : "இங்கே தட்டச்சு செய்யவும்..."}
+        placeholder={
+          isLoading
+            ? language === "tamil"
+              ? "உரையாடல் நடைபெறுகிறது..."
+              : "ಸಂಭಾಷಣೆ ನಡೆಯುತ್ತಿದೆ..."
+            : language === "tamil"
+            ? "இங்கே தட்டச்சு செய்யவும்..."
+            : "ಇಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ..."
+        }
         disabled={isLoading}
         className="flex-1 min-h-10 py-6 text-base"
       />
-      <Button 
-        type="submit" 
-        size="icon" 
+      <Button
+        type="submit"
+        size="icon"
         disabled={isLoading || !input.trim()}
         className="h-10 w-10"
       >

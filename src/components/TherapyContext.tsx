@@ -1,4 +1,3 @@
-// src/components/TherapyContext.tsx
 import React, {
   createContext,
   useContext,
@@ -16,7 +15,8 @@ import {
   streamingDeepSeekResponse,
   createInitialAssistantMessage,
 } from "@/lib/deepseek";
-import SYSTEM_PROMPT from "./TherapyPrompt";
+import TAMIL_SYSTEM_PROMPT from "./TherapyPrompt";
+import KANNADA_SYSTEM_PROMPT from "./KannadaTherapyPrompt";
 
 // Create context
 const TherapyContext = createContext<TherapyContextType | undefined>(undefined);
@@ -32,6 +32,38 @@ export const TherapyProvider: React.FC<TherapyProviderProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [language, setLanguage] = useState<"tamil" | "kannada">("tamil"); // Default to Tamil
+
+  // Watch for language changes and reset chat when language changes
+  useEffect(() => {
+    // Skip the initial render
+    if (isInitialized) {
+      console.log("Language changed to:", language);
+      // Clear session storage
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("chatHistory");
+      }
+
+      // Reset messages with new language
+      setMessages([
+        {
+          id: generateId(),
+          role: "system",
+          content: getSystemPrompt(),
+          timestamp: Date.now(),
+        },
+        createAssistantGreeting(),
+      ]);
+    }
+  }, [language]); // Create initial assistant message based on current language
+  const createAssistantGreeting = (): Message => {
+    return createInitialAssistantMessage(language);
+  }; // src/components/TherapyContext.tsx
+
+  // Function to get the appropriate system prompt based on language
+  const getSystemPrompt = () => {
+    return language === "tamil" ? TAMIL_SYSTEM_PROMPT : KANNADA_SYSTEM_PROMPT;
+  };
 
   useEffect(() => {
     // Initialize with saved messages or system message
@@ -46,15 +78,15 @@ export const TherapyProvider: React.FC<TherapyProviderProps> = ({
           {
             id: generateId(),
             role: "system",
-            content: SYSTEM_PROMPT,
+            content: getSystemPrompt(),
             timestamp: Date.now(),
           },
-          createInitialAssistantMessage(),
+          createAssistantGreeting(),
         ]);
       }
       setIsInitialized(true);
     }
-  }, [isInitialized]);
+  }, [isInitialized, language]);
 
   useEffect(() => {
     // Save messages to session storage whenever they change
@@ -96,25 +128,23 @@ export const TherapyProvider: React.FC<TherapyProviderProps> = ({
 
       setMessages((prevMessages) => [...prevMessages, assistantPlaceholder]);
 
-      // Include system message only if it doesn't exist in messages
-      const messagesForAPI = messages.some((m) => m.role === "system")
-        ? [...messages, userMessage]
-        : [
-            {
-              id: generateId(),
-              role: "system",
-              content: SYSTEM_PROMPT,
-              timestamp: Date.now(),
-            },
-            ...messages,
-            userMessage,
-          ];
+      // Always include a fresh system message to ensure proper language context
+      const systemMessage = {
+        id: generateId(),
+        role: "system" as const,
+        content: getSystemPrompt(),
+        timestamp: Date.now(),
+      };
+
+      // Remove any existing system message and add the fresh one
+      const filteredMessages = messages.filter((m) => m.role !== "system");
+      const messagesForAPI = [systemMessage, ...filteredMessages, userMessage];
 
       // Stream the response
       let accumulatedResponse = "";
 
       await streamingDeepSeekResponse(
-        messagesForAPI as Message[],
+        messagesForAPI,
         (chunk) => {
           accumulatedResponse += chunk;
           setMessages((prevMessages) =>
@@ -161,19 +191,15 @@ export const TherapyProvider: React.FC<TherapyProviderProps> = ({
   };
 
   const resetChat = () => {
-    const systemMessage = messages.find((m) => m.role === "system");
-
-    const newMessages = systemMessage
-      ? [systemMessage, createInitialAssistantMessage()]
-      : [
-          {
-            id: generateId(),
-            role: "system",
-            content: SYSTEM_PROMPT,
-            timestamp: Date.now(),
-          },
-          createInitialAssistantMessage(),
-        ];
+    const newMessages = [
+      {
+        id: generateId(),
+        role: "system",
+        content: getSystemPrompt(),
+        timestamp: Date.now(),
+      },
+      createAssistantGreeting(),
+    ];
 
     setMessages(newMessages as Message[]);
     saveMessagesToSession(newMessages as Message[]);
@@ -188,6 +214,8 @@ export const TherapyProvider: React.FC<TherapyProviderProps> = ({
         isLoading,
         error,
         resetChat,
+        language,
+        setLanguage,
       }}
     >
       {children}

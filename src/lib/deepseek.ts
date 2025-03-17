@@ -44,7 +44,7 @@ export function createDeepSeekResponseParser() {
       buffer += decoder.decode(chunk, { stream: true });
       const parser = createParser({
         onEvent(event) {
-          if (event.event === 'message') {
+          if (event.event === 'event') {
             const data = event.data;
             
             // Check for [DONE] message
@@ -148,11 +148,15 @@ export async function streamingDeepSeekResponse(
   }
 }
 
-export function createInitialAssistantMessage(): Message {
+export function createInitialAssistantMessage(language: 'tamil' | 'kannada'): Message {
+  const greeting = language === 'tamil'
+    ? "என்னடா கிஷோர், எப்படி இருக்க? நான் இங்க தான் இருக்கேன் உன்கூட பேச. சொல்லு என்ன நடக்குது?"
+    : "ಹೇಯ್ ಶಿಲ್ಪಾ, ಹೇಗಿದ್ದೀಯಾ? ನಾನು ಇಲ್ಲಿದ್ದೀನಿ ನಿನ್ನ ಜೊತೆ ಮಾತಾಡಕ್ಕೆ. ಹೇಳು, ಏನ್ ನಡೀತಾ ಇದೆ?";
+    
   return {
     id: generateId(),
     role: 'assistant',
-    content: 'வணக்கம் கிஷோர். நான் உங்களுடன் பேச இங்கே இருக்கிறேன். என்ன நடக்குது என்று சொல்லுங்க?',
+    content: greeting,
     timestamp: Date.now(),
   };
 }

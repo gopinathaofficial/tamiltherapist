@@ -50,4 +50,6 @@ export interface TherapyContextType {
   isLoading: boolean;
   error: string | null;
   resetChat: () => void;
+  language: 'tamil' | 'kannada';
+  setLanguage: React.Dispatch<React.SetStateAction<'tamil' | 'kannada'>>;
 }
